@@ -8,6 +8,7 @@ from pdfminer.converter import PDFPageAggregator
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import argparse
+import os
 
 from symbol_parser import SymbolParser
 
@@ -69,6 +70,17 @@ parser = argparse.ArgumentParser()
 parser.add_argument("path", help="Path to a PDF")
 args = parser.parse_args()
 
+if not os.path.exists(args.path):
+    raise RuntimeError("File doesn't exist!")
+
+filename = os.path.basename(args.path)
+
+symbol_location = {
+    "lm3100.pdf": 34
+}
+
+if filename not in symbol_location:
+    raise RuntimeError("Example script doesn't work on that datasheet yet!\n\nTry on:\n{}".format(list(symbol_location.keys())))
 
 # Script starts here
 layouts = get_layouts(args.path)
