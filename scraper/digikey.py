@@ -2,10 +2,15 @@ import requests
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
+import os
+import argparse, sys
+
 
 
 DIGIKEY = "https://www.digikey.com"
-PRODUCTS = "/products/en?keywords="
+SEARCH = "/products/en?keywords="
+CATEGORIES = "/products/en/integrated-circuits-ics/32?pkeyword=&keywords=&v=&newproducts=1"
+CATEGORIES_DATASHEETS = CATEGORIES + "&datasheet=1"
 
 
 # TODO real logging
@@ -13,13 +18,8 @@ def log(key, val):
     print(str(key) + ": " + str(val))
 
 
-def search(driver, partnumber):
-    pdf_url, man, details_page = part_info(partnumber)
-    return {"pdf_url":pdf_url, "manufacturer":man, "details_page":details_page}
-
-
-def part_info(driver, part_number):
-    search_url = DIGIKEY + PRODUCTS + part_number
+def search(driver, part_number):
+    search_url = DIGIKEY + SEARCH + part_number
     log(search_url, search_url)
     driver.get(search_url)
     # TODO proper wait
@@ -39,10 +39,40 @@ def part_info(driver, part_number):
     pdf_url = tr.find("td", class_="tr-datasheet").find("a")["href"]
     #TODO make cleaning common
     man = tr.find("td", class_="tr-vendor").get_text().strip().strip("\n").lower().replace(" ", "-")
-    return pdf_url, man, DIGIKEY + details_page
+    return [pdf_url, man, details_page]
+
+# scrapes all parts
+def scape_all():
+    pass
+
+# scrapes parts for category
+def scrape_category(driver, cat):
+    parts = scrape_categoy_parts(driver, cat)
+    part_info = [cat]
+    for p in parts():
+        part_info.append(p)
+        part_info += search(p)
+    print(part_info)
+
+
+# gets all categories for integrated circuits
+def scrape_categories(driver):
+    return []
+
+# gets all parts for category
+def scrape_categoy_parts(driver, cat):
+    return []
 
 
 if __name__ == "__main__":
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--scrape_part', help='Scrape info based on a part number', type=str)
+    parser.add_argument('--scrape_categories', help='Scrape all IC categories', type=str)
+    parser.add_argument('--scrape_category', help='Scrape all part info for a category', type=str)
+    args = parser.parse_args()
+    print(args.search_part)
     driver = webdriver.Firefox()
-    print(part_info(driver, "KSZ8993M"))
+    if 'search_part' in args:
+        log("searching", args.search_part)
+        print(search(driver, args.search_part))
     driver.quit()
