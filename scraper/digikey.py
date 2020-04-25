@@ -52,7 +52,7 @@ def scrape_all(driver):
     cats = scrape_categories(driver)
     log("found cats", "")
     with open("out.csv", "w") as out:
-        out.write(HEADERS)
+        out.write(HEADERS + '\n')
         for cat in cats:
             # name = cat[0]
             link = cat[1]
