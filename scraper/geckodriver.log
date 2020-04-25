@@ -404,3 +404,6 @@ JavaScript error: resource://gre/modules/XULStore.jsm, line 66: Error: Can't fin
 JavaScript error: resource://gre/modules/XULStore.jsm, line 66: Error: Can't find profile directory.
 JavaScript error: resource://gre/modules/XULStore.jsm, line 66: Error: Can't find profile directory.
 1587850973058	Marionette	INFO	Stopped listening on port 44359
+1587851200647	Marionette	INFO	Stopped listening on port 44931
+1587851201894	Marionette	INFO	Stopped listening on port 33073
+1587851203563	Marionette	INFO	Stopped listening on port 41649

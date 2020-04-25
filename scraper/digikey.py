@@ -47,7 +47,7 @@ def scape_all():
 
 # scrapes parts for category
 def scrape_category(driver, cat):
-    parts = categoy_parts(driver, cat)
+    parts = scrape_categoy_parts(driver, cat)
     part_info = [cat]
     for p in parts():
         part_info.append(p)
@@ -56,23 +56,21 @@ def scrape_category(driver, cat):
 
 
 # gets all categories for integrated circuits
-def categories(driver):
+def scrape_categories(driver):
     return []
 
 # gets all parts for category
-def categoy_parts(driver, cat):
+def scrape_categoy_parts(driver, cat):
     return []
 
 
 if __name__ == "__main__":
-
     parser=argparse.ArgumentParser()
-    parser.add_argument('--search_part', help='Provide a part number to search', type=str)
-    parser.add_argument('--get_category', help='Provide a part number to search', type=str)
-    parser.add_argument('--scrap_category', help='Provide a part number to search', type=str)
+    parser.add_argument('--scrape_part', help='Scrape info based on a part number', type=str)
+    parser.add_argument('--scrape_categories', help='Scrape all IC categories', type=str)
+    parser.add_argument('--scrape_category', help='Scrape all part info for a category', type=str)
     args = parser.parse_args()
     print(args.search_part)
-
     driver = webdriver.Firefox()
     if 'search_part' in args:
         log("searching", args.search_part)
