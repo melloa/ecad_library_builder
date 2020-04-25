@@ -14,7 +14,7 @@ CATEGORIES_DATASHEETS = CATEGORIES + "&datasheet=1"
 
 
 # TODO real logging
-def log(key: object, val: object) -> object:
+def log(key, val):
     print(str(key) + ": " + str(val))
 
 
@@ -22,7 +22,7 @@ def search(driver, part_number):
     search_url = DIGIKEY + SEARCH + part_number
     log(search_url, search_url)
     driver.get(search_url)
-    # TODO create wait
+    # TODO proper wait
     time.sleep(5)
     elem = driver.find_element_by_xpath('//*[@id="productTable"]/tbody')
     html = elem.get_attribute('innerHTML')
