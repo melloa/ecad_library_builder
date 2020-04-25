@@ -22,7 +22,7 @@ def part_info(driver, part_number):
     search_url = DIGIKEY + PRODUCTS + part_number
     log(search_url, search_url)
     driver.get(search_url)
-    # TODO create wait
+    # TODO proper wait
     time.sleep(5)
     elem = driver.find_element_by_xpath('//*[@id="productTable"]/tbody')
     html = elem.get_attribute('innerHTML')
