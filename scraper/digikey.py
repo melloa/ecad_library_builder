@@ -14,20 +14,8 @@ def log(key: object, val: object) -> object:
 
 
 def search(driver, partnumber):
-    pdf_url, man, details = part_info(partnumber)
-    sym = symbol(pdf_url)
-    foot = footprint(pdf_url)
-    return {"pdf_url":pdf_url, "manufacturer":man, "symbol":sym, "footprint":foot}
-
-
-def symbol(pdf_url):
-    # TODO implement
-    return "sym"
-
-
-def footprint(pdf):
-    # TODO implement
-    return "foot"
+    pdf_url, man, details_page = part_info(partnumber)
+    return {"pdf_url":pdf_url, "manufacturer":man, "details_page":details_page}
 
 
 def part_info(driver, part_number):
