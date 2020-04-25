@@ -11,7 +11,7 @@ DIGIKEY = "https://www.digikey.com"
 SEARCH = "/products/en?keywords="
 CATEGORIES = "/products/en/integrated-circuits-ics/32?pkeyword=&keywords=&v=&newproducts=1"
 CATEGORIES_DATASHEETS = CATEGORIES + "&datasheet=1"
-HEADERS = "pdf, manufacturer, details_page"
+HEADERS = "part_number, pdf, manufacturer, details_page"
 
 # TODO real logging
 def log(key, val):
@@ -28,7 +28,8 @@ def get_parts_info(tr):
     details_page = DIGIKEY + tr.find("td", class_="tr-mfgPartNumber").find("a")["href"]
     pdf_url = tr.find("td", class_="tr-datasheet").find("a")["href"]
     man = clean(tr.find("td", class_="tr-vendor").get_text()).replace(" ", "-").replace(",","")
-    return [pdf_url, man, details_page]
+    part_number = clean(tr.find("td", class_="tr-mfgPartNumber").find("span").get_text())
+    return [part_number, pdf_url, man, details_page]
 
 
 def search(driver, part_number):
