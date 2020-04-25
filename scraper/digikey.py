@@ -9,7 +9,7 @@ PRODUCTS = "/products/en?keywords="
 
 
 # TODO real logging
-def log(key: object, val: object) -> object:
+def log(key, val):
     print(str(key) + ": " + str(val))
 
 
