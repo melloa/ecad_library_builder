@@ -14,6 +14,7 @@ SEARCH = "/products/en?keywords="
 CATEGORIES = "/products/en/integrated-circuits-ics/32?pkeyword=&keywords=&v=&newproducts=1"
 CATEGORIES_DATASHEETS = CATEGORIES + "&datasheet=1"
 HEADERS = "part_number, pdf, manufacturer, details_page"
+WAIT = 10
 
 
 # TODO real logging
@@ -34,7 +35,11 @@ def get_parts_info(tr):
     if details_page is None:
         log("couldn't parse details", "")
         return None
-    pdf_url = tr.find("td", class_="tr-datasheet").find("a")["href"]
+    pdf_url = tr.find("td", class_="tr-datasheet")
+    if pdf_url is None:
+        log("couldn't parse pdf", "")
+        return None
+    pdf_url = pdf_url.find("a")["href"]
     if pdf_url is None:
         log("couldn't parse pdf", "")
         return None
@@ -42,7 +47,11 @@ def get_parts_info(tr):
     if man is None:
         log("couldn't parse vendor", "")
         return None
-    part_number = clean(tr.find("td", class_="tr-mfgPartNumber").find("span").get_text())
+    part_number = tr.find("td", class_="tr-mfgPartNumber")
+    if part_number is None:
+        log("couldn't parse part number", "")
+        return None
+    part_number = clean(part_number.find("span").get_text())
     if part_number is None:
         log("couldn't parse part number", "")
         return None
@@ -54,7 +63,7 @@ def search(driver, part_number):
     log(search_url, search_url)
     driver.get(search_url)
     # TODO proper wait
-    time.sleep(5)
+    time.sleep(WAIT)
     table = driver.find_element_by_xpath('//*[@id="productTable"]/tbody')
     html = table.get_attribute('innerHTML')
     soup = BeautifulSoup(html, features='html.parser')
@@ -86,7 +95,7 @@ def scrape_all(driver, dc):
                 else:
                     set_part(dc, part)
                 log("stored part", part)
-            time.sleep(5) # don't get blocked
+            time.sleep(WAIT) # don't get blocked
 
 
 # scrapes parts for category
@@ -94,7 +103,7 @@ def scrape_category(driver, cat_url):
     cat_url += "&pageSize=1000"
     driver.get(cat_url)
     # TODO proper wait
-    time.sleep(5)
+    time.sleep(WAIT)
     try:
         table = driver.find_element_by_xpath('//*[@id="lnkPart"]')
     except:
@@ -106,6 +115,9 @@ def scrape_category(driver, cat_url):
         log("couldn't parse", "")
         return None
     trs = soup.find_all("tr")
+    if trs is None:
+        log("couldn't get rows", "")
+        return None
     parts_info = []
     for tr in trs:
         part_info = get_parts_info(tr)
@@ -118,7 +130,7 @@ def scrape_category(driver, cat_url):
 # gets all categories for integrated circuits
 def scrape_categories(driver):
     driver.get(DIGIKEY + CATEGORIES_DATASHEETS)
-    time.sleep(5)
+    time.sleep(WAIT)
     ul = driver.find_element_by_xpath('//*[@id="productIndexList"]/ul')
     html = ul.get_attribute('innerHTML')
     soup = BeautifulSoup(html, features='html.parser')
@@ -129,6 +141,9 @@ def scrape_categories(driver):
     cats = []
     for li in lis:
         a = li.find("a")
+        if a is None:
+            log("couldn't get a", "")
+            return None
         link = DIGIKEY + a["href"]
         # log("link", link)
         name = clean(a.get_text()).replace(" ", "")
