@@ -1,24 +1,29 @@
 import requests
+from google.cloud import datastore
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
 import os
 import argparse, sys
+from store.store import set_part
 
 
-
+PART_TYPE = 'part'
 DIGIKEY = "https://www.digikey.com"
 SEARCH = "/products/en?keywords="
 CATEGORIES = "/products/en/integrated-circuits-ics/32?pkeyword=&keywords=&v=&newproducts=1"
 CATEGORIES_DATASHEETS = CATEGORIES + "&datasheet=1"
 HEADERS = "part_number, pdf, manufacturer, details_page"
 
+
 # TODO real logging
 def log(key, val):
     print(str(key) + ": " + str(val))
 
+
 def clean(s):
     return s.strip().strip("\n").lower()
+
 
 def get_parts_info(tr):
     if tr is None:
@@ -26,10 +31,22 @@ def get_parts_info(tr):
         return None
     #TODO make concurrent
     details_page = DIGIKEY + tr.find("td", class_="tr-mfgPartNumber").find("a")["href"]
+    if details_page is None:
+        log("couldn't parse details", "")
+        return None
     pdf_url = tr.find("td", class_="tr-datasheet").find("a")["href"]
+    if pdf_url is None:
+        log("couldn't parse pdf", "")
+        return None
     man = clean(tr.find("td", class_="tr-vendor").get_text()).replace(" ", "-").replace(",","")
+    if man is None:
+        log("couldn't parse vendor", "")
+        return None
     part_number = clean(tr.find("td", class_="tr-mfgPartNumber").find("span").get_text())
-    return [part_number, pdf_url, man, details_page]
+    if part_number is None:
+        log("couldn't parse part number", "")
+        return None
+    return {"number":part_number, "pdf":pdf_url, "manufacturer":man, "details_page":details_page}
 
 
 def search(driver, part_number):
@@ -49,11 +66,11 @@ def search(driver, part_number):
 
 
 # scrapes all parts
-def scrape_all(driver):
+def scrape_all(driver, dc):
     cats = scrape_categories(driver)
     log("found cats", "")
     with open("out.csv", "w") as out:
-        out.write(HEADERS + '\n')
+        # out.write(HEADERS + '\n')
         for cat in cats:
             # name = cat[0]
             link = cat[1]
@@ -62,10 +79,13 @@ def scrape_all(driver):
                 log("skipping", link)
                 continue
             for part in parts:
-                for data in part:
-                    out.write(data + ",")
-                out.write("\n")
-                log("wrote part", part)
+                if dc == None:
+                    for data in part:
+                        out.write(data + ",")
+                    out.write("\n")
+                else:
+                    set_part(dc, part)
+                log("stored part", part)
             time.sleep(5) # don't get blocked
 
 
@@ -88,7 +108,10 @@ def scrape_category(driver, cat_url):
     trs = soup.find_all("tr")
     parts_info = []
     for tr in trs:
-        parts_info.append(get_parts_info(tr))
+        part_info = get_parts_info(tr)
+        if part_info is None:
+            continue
+        parts_info.append(part_info)
     return parts_info
 
 
@@ -120,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument('--scrape_categories', help='Scrape all IC categories', type=bool)
     parser.add_argument('--scrape_category', help='Scrape all part info for a category', type=str)
     parser.add_argument('--scrape_all', help='Scrape all parts info', type=bool)
+    parser.add_argument('--dump', help='Dump data to cloud', type=bool)
     args = parser.parse_args()
     print(args)
     driver = webdriver.Firefox()
@@ -134,7 +158,10 @@ if __name__ == "__main__":
         print(scrape_category(driver, args.scrape_category))
     elif not(args.scrape_all is None):
         log("scrape all", args.scrape_all)
-        scrape_all(driver)
+        dc = None
+        if not(args.dump is None):
+            dc = datastore.Client(project='thiq-275323')
+        scrape_all(driver, dc)
     else:
         print("invalid options")
     driver.quit()

@@ -757,3 +757,10 @@ JavaScript error: resource://gre/modules/XULStore.jsm, line 66: Error: Can't fin
 Exiting due to channel error.
 Exiting due to channel error.
 Exiting due to channel error.
+JavaScript error: , line 0: UnknownError: The operation failed for reasons unrelated to the database itself and not covered by any other error code.
+1587857977184	Marionette	INFO	Stopped listening on port 42685
+1587857977190	Marionette	INFO	Stopped listening on port 38079
+1587857977195	Marionette	INFO	Stopped listening on port 38197
+1587857977199	Marionette	INFO	Stopped listening on port 36443
+1587857977205	Marionette	INFO	Stopped listening on port 34719
+1587857977215	Marionette	INFO	Stopped listening on port 42671
