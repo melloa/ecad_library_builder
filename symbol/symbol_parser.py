@@ -2,12 +2,13 @@ from pdfminer.layout import LTCurve, LTChar, LTRect, LTLine
 import logging
 
 MAXIMUM_DIST_TO_NEXT_CHAR = 1.0  # pixels ?
+logging.basicConfig()
 LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
 
 
 class Symbol:
     def __init__(self, rectangle):
+        logging.getLogger(__name__).setLevel(logging.INFO)
         self.x0, self.y0, self.x1, self.y1 = rectangle.bbox
         self.text = []
         self.curves = []
@@ -50,7 +51,6 @@ class Symbol:
         LOG.info("Adding pin: {}".format(type(pin)))
         if type(pin) == LTLine:
             self.pin_width = pin.width
-            print(pin.width)
             self.pins.append(pin)
         else:
             ValueError(
@@ -66,13 +66,18 @@ class Symbol:
         )
 
     def touching(self, line):
-        x = {round(line.x0), round(line.x1)}.intersection(
-            {round(self.x0), round(self.x1)}
-        )
-        y = {round(line.y0), round(line.y1)}.intersection(
-            {round(self.y0), round(self.y1)}
-        )
-        return x or y
+        diffs = [
+            abs(line.x0 - self.x0),
+            abs(line.x1 - self.x0),
+            abs(line.x0 - self.x1),
+            abs(line.x1 - self.x1),
+            abs(line.y0 - self.y0),
+            abs(line.y1 - self.y0),
+            abs(line.y0 - self.y1),
+            abs(line.y1 - self.y1),
+        ]
+
+        return any([diff < 1 for diff in diffs])
 
 
 class SymbolParser:

@@ -49,6 +49,11 @@ def plot(axis_limits, symbol):
             y.append(pt[1])
         ax.plot(x, y)
 
+    for pin in symbol.pins:
+        x = [pin.bbox[0], pin.bbox[2]]
+        y = [pin.bbox[1], pin.bbox[3]]
+        ax.plot(x, y)
+
     for text in symbol.text:
         angle = 90 if text.vertical else 0
         start = text.x1 if text.vertical else text.x0
@@ -85,6 +90,9 @@ def plot_bbox(axis_limits, bboxs):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("path", help="Path to a PDF")
+parser.add_argument("--plot_page", action="store_true")
+parser.add_argument("--plot_figure", action="store_true")
+parser.add_argument("--plot_symbol", action="store_true")
 args = parser.parse_args()
 
 if not os.path.exists(args.path):
@@ -112,17 +120,20 @@ layouts = get_layouts(args.path)
 # except for using the private variable or iterating
 # 34 is hardcoded for the example circuit to get the symbol
 # Only works for LM3100
-symbol_page = layouts[symbol_location[filename]["page"] + 22]
+symbol_page = layouts[symbol_location[filename]["page"]]
 
-plot_bbox(symbol_page.bbox, symbol_page._objs)
+if args.plot_page:
+    plot_bbox(symbol_page.bbox, symbol_page._objs)
 
 symbol_figure = symbol_page
 if symbol_location[filename]["object"]:
     symbol_figure = symbol_page._objs[symbol_location[filename]["object"]]
-print(symbol_figure)
+
 symbol = SymbolParser().parse(symbol_figure)
 
 # Plots the contents of symbol_figure
-plot_bbox(symbol_page.bbox, symbol_figure._objs)
+if args.plot_figure:
+    plot_bbox(symbol_page.bbox, symbol_figure._objs)
 
-# plot(symbol_figure.bbox, symbol)
+if args.plot_symbol:
+    plot(symbol_figure.bbox, symbol)
