@@ -9,9 +9,13 @@ from random import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import argparse
+import logging
 import os
 
 from symbol_parser import SymbolParser
+
+logging.basicConfig(format="(%(relativeCreated)d) %(name)s::%(levelname)s %(message)s ")
+LOG = logging.getLogger("EXAMPLE")
 
 
 def get_layouts(path):
@@ -88,52 +92,53 @@ def plot_bbox(axis_limits, bboxs):
     plt.show()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("path", help="Path to a PDF")
-parser.add_argument("--plot_page", action="store_true")
-parser.add_argument("--plot_figure", action="store_true")
-parser.add_argument("--plot_symbol", action="store_true")
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path", help="Path to a PDF")
+    parser.add_argument("--plot_page", action="store_true")
+    parser.add_argument("--plot_figure", action="store_true")
+    parser.add_argument("--plot_symbol", action="store_true")
+    args = parser.parse_args()
 
-if not os.path.exists(args.path):
-    raise RuntimeError("File doesn't exist!")
+    if not os.path.exists(args.path):
+        raise RuntimeError("File doesn't exist!")
 
-filename = os.path.basename(args.path)
+    filename = os.path.basename(args.path)
 
-symbol_location = {
-    "lm3100.pdf": {"page": 0, "object": 34},
-    "AS1115_DS000206_1-00.pdf": {"page": 1, "object": None},
-    "74HC_HCT165.pdf": {"page": 1, "object": None},
-}
+    symbol_location = {
+        "lm3100.pdf": {"page": 0, "object": 34},
+        "AS1115_DS000206_1-00.pdf": {"page": 1, "object": None},
+        "74HC_HCT165.pdf": {"page": 1, "object": None},
+    }
 
-if filename not in symbol_location:
-    raise RuntimeError(
-        "Example script doesn't work on that datasheet yet!\n\nTry on:\n{}".format(
-            list(symbol_location.keys())
+    if filename not in symbol_location:
+        raise RuntimeError(
+            "Example script doesn't work on that datasheet yet!\n\nTry on:\n{}".format(
+                list(symbol_location.keys())
+            )
         )
-    )
 
-# Script starts here
-layouts = get_layouts(args.path)
+    # Script starts here
+    layouts = get_layouts(args.path)
 
-# I don't think there's a clean way to access inner object
-# except for using the private variable or iterating
-# 34 is hardcoded for the example circuit to get the symbol
-# Only works for LM3100
-symbol_page = layouts[symbol_location[filename]["page"]]
+    # I don't think there's a clean way to access inner object
+    # except for using the private variable or iterating
+    # 34 is hardcoded for the example circuit to get the symbol
+    # Only works for LM3100
+    symbol_page = layouts[symbol_location[filename]["page"]]
 
-if args.plot_page:
-    plot_bbox(symbol_page.bbox, symbol_page._objs)
+    if args.plot_page:
+        plot_bbox(symbol_page.bbox, symbol_page._objs)
 
-symbol_figure = symbol_page
-if symbol_location[filename]["object"]:
-    symbol_figure = symbol_page._objs[symbol_location[filename]["object"]]
+    symbol_figure = symbol_page
+    if symbol_location[filename]["object"]:
+        symbol_figure = symbol_page._objs[symbol_location[filename]["object"]]
 
-symbol = SymbolParser().parse(symbol_figure)
+    symbol = SymbolParser().parse(symbol_figure)
 
-# Plots the contents of symbol_figure
-if args.plot_figure:
-    plot_bbox(symbol_page.bbox, symbol_figure._objs)
+    # Plots the contents of symbol_figure
+    if args.plot_figure:
+        plot_bbox(symbol_page.bbox, symbol_figure._objs)
 
-if args.plot_symbol:
-    plot(symbol_figure.bbox, symbol)
+    if args.plot_symbol:
+        plot(symbol_figure.bbox, symbol)

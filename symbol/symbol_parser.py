@@ -2,13 +2,12 @@ from pdfminer.layout import LTCurve, LTChar, LTRect, LTLine
 import logging
 
 MAXIMUM_DIST_TO_NEXT_CHAR = 1.0  # pixels ?
-logging.basicConfig()
 LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.INFO)
 
 
 class Symbol:
     def __init__(self, rectangle):
-        logging.getLogger(__name__).setLevel(logging.INFO)
         self.x0, self.y0, self.x1, self.y1 = rectangle.bbox
         self.text = []
         self.curves = []
@@ -102,7 +101,7 @@ class SymbolParser:
 
         # TODO: Fix me
         if len(rectangles) > 1:
-            LOG.warn(
+            LOG.warning(
                 "More than one rectangle for symbol! Found {}".format(len(rectangles))
             )
         symbol.add_rectangle(rectangles[0])
@@ -111,7 +110,7 @@ class SymbolParser:
 
         total_processed = len(characters) + len(rectangles) + len(curves)
         if total_processed != len(objects_within_symbol):
-            LOG.warn("Not all objects processed!")
+            LOG.warning("Not all objects processed!")
 
         textlines = []
         for _ in range(len(characters)):
