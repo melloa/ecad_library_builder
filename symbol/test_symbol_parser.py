@@ -14,6 +14,11 @@ class Truth:
         PIN_COUNT = 20
         OUTLINE = (247.6789, 119.5301, 305.6109, 207.5301)
 
+    class AS1115:
+        VARIABLE = "AS1115_DS000206_1-00.pkl"
+        PIN_COUNT = 10
+        OUTLINE = (189.35999999999999, 108.47999999999999, 259.8, 236.76)
+
 
 class TestSymbolParser:
     def setup(self):
@@ -22,18 +27,32 @@ class TestSymbolParser:
         self.sp = SymbolParser()
         LOG.setLevel(level=logging.WARNING)
 
-    def test_lm3100(self):
+    def _verify_component(self, component):
         data = None
-        var_path = self.testdata + Truth.LM3100.VARIABLE
+        var_path = self.testdata + component.VARIABLE
         with open(var_path, "rb") as f:
             data = pickle.load(f)
 
         symbol = self.sp.parse(data)
         rect = symbol.x0, symbol.y0, symbol.x1, symbol.y1
 
-        assert len(symbol.pins) == Truth.LM3100.PIN_COUNT
-        assert len(symbol.text) == Truth.LM3100.PIN_COUNT + 1
-        assert rect == Truth.LM3100.OUTLINE
+        assert len(symbol.pins) == component.PIN_COUNT
+        assert len(symbol.text) == component.PIN_COUNT + 1
+        assert rect == component.OUTLINE
+
+    def test_lm3100(self):
+        self._verify_component(Truth.LM3100)
+
+    def test_as1115(self):
+        data = None
+        var_path = self.testdata + Truth.AS1115.VARIABLE
+        with open(var_path, "rb") as f:
+            data = pickle.load(f)
+
+        symbol = self.sp.parse(data)
+        rect = symbol.x0, symbol.y0, symbol.x1, symbol.y1
+
+        assert rect == Truth.AS1115.OUTLINE
 
 
 if __name__ == "__main__":

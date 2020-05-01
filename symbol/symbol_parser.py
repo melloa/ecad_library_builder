@@ -1,4 +1,5 @@
 from pdfminer.layout import LTCurve, LTChar, LTRect, LTLine
+import numpy as np
 import logging
 
 MAXIMUM_DIST_TO_NEXT_CHAR = 1.0  # pixels ?
@@ -78,20 +79,84 @@ class Symbol:
 
         return any([diff < 1 for diff in diffs])
 
+    def width(self):
+        return self.x1 - self.x0
+
+    def height(self):
+        return self.y1 - self.y0
+
+
+def area(rect):
+    return (rect.x1 - rect.x0) * (rect.y1 - rect.y0)
+
 
 class SymbolParser:
-    def parse(self, figure):
-        def area(rect):
-            return (rect.x1 - rect.x0) * (rect.y1 - rect.y0)
+    # TUNABLE PARAMETERS
+    # TODO: Convert to numpy for matrix math
+    _find_part_weights = (
+        0.1,  # Number of objects within
+        0.1,  # Number of objects touching
+        300,  # Height / width ratio
+        0.01,  # Area
+    )
 
+    def find_part(self):
+        algorithms = [self._find_part_largest_rectangle]
+        result = []
+        for function in algorithms:
+            result.extend(function(n=3))
+        print(result)
+        return sorted(result, key=lambda r: r[0], reverse=True)[0]
+
+    def _find_part_largest_rectangle(self, n=1):
+        symbols = []
+        areas_of_rects = []
+        for object_ in self._figure:
+            if type(object_) == LTRect:
+                areas_of_rects.append(area(object_))
+            else:
+                areas_of_rects.append(0)
+
+        available_rects = self._figure._objs
+        while len(symbols) < n:
+            index = areas_of_rects.index(max(areas_of_rects))
+            # TODO: Add proper support for indexing sub-objects
+            symbol = Symbol(available_rects[index])
+            symbols.append((self._find_part_cost(symbol), symbol))
+            areas_of_rects.pop(index)
+            available_rects.pop(index)
+
+        return symbols
+
+    def _find_part_cost(self, symbol):
+        if symbol.height() < 2 or symbol.width() < 2:
+            return 0
+
+        within = [obj for obj in self._figure if symbol.within(obj)]
+        touching = [obj for obj in self._figure if symbol.touching(obj)]
+        ratio = symbol.height() / symbol.width()
+        area = symbol.height() * symbol.width()
+
+        # TODO: Convert to matrix math
+        cost = self._find_part_weights[0] * len(within)
+        cost += self._find_part_weights[1] * len(touching)
+        cost += self._find_part_weights[2] * ratio
+        cost += self._find_part_weights[3] * area
+
+        # TODO: Build formatted cost table outputter
+        LOG.debug(
+            "-----> {}  - {}x{} = {} ".format(
+                cost, symbol.height(), symbol.width(), ratio
+            )
+        )
+        return cost
+
+    def parse(self, figure):
         LOG.info("Starting symbol parser")
-        # Get largest rectangle
-        # TODO: What if not a LTRect?
-        areas_of_rects = [area(o) if type(o) == LTRect else 0 for o in figure]
-        index = areas_of_rects.index(max(areas_of_rects))
-        # TODO: Add proper support for indexing sub-objects
-        symbol = Symbol(figure._objs[index])
-        LOG.info("Created symbol based on largest rectangle")
+        self._figure = figure
+        (cost, symbol) = self.find_part()
+
+        LOG.info("Created symbol with cost of {}".format(cost))
         objects_within_symbol = [o for o in figure if symbol.within(o)]
         lines = [o for o in figure if type(o) == LTLine]
         characters = [o for o in objects_within_symbol if type(o) == LTChar]
@@ -104,7 +169,7 @@ class SymbolParser:
             LOG.warning(
                 "More than one rectangle for symbol! Found {}".format(len(rectangles))
             )
-        symbol.add_rectangle(rectangles[0])
+        # symbol.add_rectangle(rectangles[0])
         # TODO: Fix me - better naming
         symbol.add_curves(curves)
 
