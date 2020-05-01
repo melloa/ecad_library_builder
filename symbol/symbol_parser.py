@@ -1,4 +1,4 @@
-from pdfminer.layout import LTCurve, LTChar, LTRect
+from pdfminer.layout import LTCurve, LTChar, LTRect, LTLine
 import logging
 
 MAXIMUM_DIST_TO_NEXT_CHAR = 1.0  # pixels ?
@@ -11,6 +11,8 @@ class Symbol:
         self.x0, self.y0, self.x1, self.y1 = rectangle.bbox
         self.text = []
         self.curves = []
+        self.pins = []
+        self.pin_width = 0
         self.rectangle = None
 
     def add_text(self, text):
@@ -44,6 +46,17 @@ class Symbol:
                 "Unknown type attempting to add as a rectangle! ({})".format(type(rect))
             )
 
+    def add_pin(self, pin):
+        LOG.info("Adding pin: {}".format(type(pin)))
+        if type(pin) == LTLine:
+            self.pin_width = pin.width
+            print(pin.width)
+            self.pins.append(pin)
+        else:
+            ValueError(
+                "Unknown type attempting to add as a rectangle! ({})".format(type(pin))
+            )
+
     def within(self, target):
         return (
             self.x0 <= target.x0
@@ -51,6 +64,15 @@ class Symbol:
             and self.x1 >= target.x1
             and self.y1 >= target.y1
         )
+
+    def touching(self, line):
+        x = {round(line.x0), round(line.x1)}.intersection(
+            {round(self.x0), round(self.x1)}
+        )
+        y = {round(line.y0), round(line.y1)}.intersection(
+            {round(self.y0), round(self.y1)}
+        )
+        return x or y
 
 
 class SymbolParser:
@@ -67,6 +89,7 @@ class SymbolParser:
         symbol = Symbol(figure._objs[index])
         LOG.info("Created symbol based on largest rectangle")
         objects_within_symbol = [o for o in figure if symbol.within(o)]
+        lines = [o for o in figure if type(o) == LTLine]
         characters = [o for o in objects_within_symbol if type(o) == LTChar]
         rectangles = [o for o in objects_within_symbol if type(o) == LTRect]
         curves = [o for o in objects_within_symbol if type(o) == LTCurve]
@@ -95,6 +118,10 @@ class SymbolParser:
                     break
             if new:
                 textlines.append(TextLine(char))
+
+        for line in lines:
+            if symbol.touching(line):
+                symbol.add_pin(line)
 
         symbol.add_text(textlines)
         LOG.info("Created textlines within symbol")

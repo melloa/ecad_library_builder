@@ -4,6 +4,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.layout import LAParams
 from pdfminer.converter import PDFPageAggregator
+from random import random
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -32,7 +33,7 @@ def get_layouts(path):
 
 
 def plot(axis_limits, symbol):
-    fig, ax = plt.subplots(1)
+    _, ax = plt.subplots(1)
 
     x0, y0, x1, y1 = symbol.rectangle.bbox
     rect = patches.Rectangle(
@@ -66,6 +67,22 @@ def plot(axis_limits, symbol):
     plt.show()
 
 
+def plot_bbox(axis_limits, bboxs):
+    _, ax = plt.subplots(1)
+
+    for r in bboxs:
+        x0, y0, x1, y1 = r.bbox
+        c = (random(), random(), random(), 0.7)
+        rect = patches.Rectangle(
+            (x0, y0), x1 - x0, y1 - y0, linewidth=1, edgecolor=c, facecolor="none"
+        )
+        ax.add_patch(rect)
+    xmin, ymin, xmax, ymax = axis_limits
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin, ymax)
+    plt.show()
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("path", help="Path to a PDF")
 args = parser.parse_args()
@@ -76,11 +93,17 @@ if not os.path.exists(args.path):
 filename = os.path.basename(args.path)
 
 symbol_location = {
-    "lm3100.pdf": 34
+    "lm3100.pdf": {"page": 0, "object": 34},
+    "AS1115_DS000206_1-00.pdf": {"page": 1, "object": None},
+    "74HC_HCT165.pdf": {"page": 1, "object": None},
 }
 
 if filename not in symbol_location:
-    raise RuntimeError("Example script doesn't work on that datasheet yet!\n\nTry on:\n{}".format(list(symbol_location.keys())))
+    raise RuntimeError(
+        "Example script doesn't work on that datasheet yet!\n\nTry on:\n{}".format(
+            list(symbol_location.keys())
+        )
+    )
 
 # Script starts here
 layouts = get_layouts(args.path)
@@ -89,10 +112,17 @@ layouts = get_layouts(args.path)
 # except for using the private variable or iterating
 # 34 is hardcoded for the example circuit to get the symbol
 # Only works for LM3100
-symbol_figure = layouts[0]._objs[34]
+symbol_page = layouts[symbol_location[filename]["page"] + 22]
+
+plot_bbox(symbol_page.bbox, symbol_page._objs)
+
+symbol_figure = symbol_page
+if symbol_location[filename]["object"]:
+    symbol_figure = symbol_page._objs[symbol_location[filename]["object"]]
+print(symbol_figure)
 symbol = SymbolParser().parse(symbol_figure)
 
 # Plots the contents of symbol_figure
-# plot(layouts[0].bbox, symbol_figure._objs)
+plot_bbox(symbol_page.bbox, symbol_figure._objs)
 
-plot(symbol_figure.bbox, symbol)
+# plot(symbol_figure.bbox, symbol)
